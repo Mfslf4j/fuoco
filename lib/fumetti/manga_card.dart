@@ -10,216 +10,290 @@ class MangaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<String> purchasedNumbers = comic['bought_volumes'].split(",");
-    var purchaseProgress = purchasedNumbers.length / comic['volumes'];
-    var readingProgress = comic['last_read_volume'] / comic['volumes'];
+    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
+    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
+    var readingProgress = (comic['last_read_volume'] ?? 0) / (comic['volumes'] ?? 1);
 
     bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
     bool isPurchasingInProgress = purchaseProgress < 1;
     bool isFullyPurchased = purchaseProgress == 1;
     bool isFullyRead = readingProgress == 1;
+    bool isCompleted = isFullyPurchased && isFullyRead;
     bool hasProgressBars = (isReadingInProgress && isPurchasingInProgress) ||
         (isReadingInProgress && isFullyPurchased) ||
         (isPurchasingInProgress && isFullyRead);
 
     return Card(
       elevation: 4,
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(4),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12), // Angoli tondi per la card
+        borderRadius: BorderRadius.circular(12),
+        side: isCompleted
+            ? BorderSide(color: Colors.orange[800]!, width: 2)
+            : BorderSide.none,
       ),
-      clipBehavior: Clip.antiAlias, // Per garantire che l'immagine rispetti i bordi tondi
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Immagine con titolo e badge
-          Stack(
+      color: isCompleted ? Colors.amber[300] : null,
+      clipBehavior: Clip.antiAlias,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final isWide = width > 300;
+          final progressBarHeight = isWide ? 25.0 : 20.0;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Immagine di copertina
-              Container(
-                height: 220, // Altezza fissa per mostrare l'immagine intera
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12), // Solo angoli superiori tondi
-                  ),
-                  image: DecorationImage(
-                    image: NetworkImage(comic['cover_url']),
-                    fit: BoxFit.cover, // L'immagine occupa tutto lo spazio
-                    alignment: Alignment.topCenter,
-                  ),
-                ),
-                foregroundDecoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.6), // Fading inferiore
-                    ],
-                    stops: const [0.7, 1.0], // Inizia il fading al 70%
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Immagine
+                    SizedBox(
+                      height: width * 1.4,
+                      child: Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(comic['cover_url'] ?? 'https://via.placeholder.com/150'),
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                              ),
+                            ),
+                            foregroundDecoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.6),
+                                ],
+                                stops: const [0.7, 1.0],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 4,
+                            left: 4,
+                            right: 4,
+                            child: Text(
+                              comic['title'] ?? 'Titolo sconosciuto',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isWide ? 18 : 14,
+                                fontWeight: FontWeight.bold,
+                                shadows: const [
+                                  Shadow(
+                                    color: Colors.black,
+                                    offset: Offset(1, 1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (isFullyPurchased || isFullyRead)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (isCompleted)
+                                    _buildBadge('Completato', Colors.orange[800]!, isWide)
+                                  else ...[
+                                    if (isFullyPurchased)
+                                      _buildBadge('Acquistato', Colors.green[700]!, isWide),
+                                    if (isFullyRead)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: _buildBadge('Letto', Colors.blue[700]!, isWide),
+                                      ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Contenuto testuale
+                    Padding(
+                      padding: EdgeInsets.all(isWide ? 8 : 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: isWide ? 16 : 14,
+                                color: Colors.grey[700],
+                              ),
+                              SizedBox(width: isWide ? 6 : 4),
+                              Text(
+                                'Autore: ${comic['author'] ?? 'Sconosciuto'}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontSize: isWide ? 14 : 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: isWide ? 4 : 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.book_outlined,
+                                size: isWide ? 16 : 14,
+                                color: Colors.grey[700],
+                              ),
+                              SizedBox(width: isWide ? 6 : 4),
+                              Text(
+                                'Volumi: ${comic['volumes'] ?? 'N/A'}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontSize: isWide ? 14 : 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              // Titolo sopra l'immagine
-              Positioned(
-                bottom: 8,
-                left: 8,
-                right: 8,
-                child: Text(
-                  comic['title'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black,
-                        offset: Offset(1, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // Badge
-              if (isFullyPurchased)
-                Positioned(
-                  top: 8,
-                  right: 8,
+              // Barre di progresso
+              if (hasProgressBars && !isCompleted)
+                SizedBox(
+                  height: progressBarHeight,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green[700],
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.white, width: 1),
-                    ),
-                    child: const Text(
-                      'Acquistato',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(12),
                       ),
                     ),
-                  ),
-                ),
-              if (isFullyRead)
-                Positioned(
-                  top: isFullyPurchased ? 48 : 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[700],
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.white, width: 1),
-                    ),
-                    child: const Text(
-                      'Letto',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: _buildProgressBars(
+                      isReadingInProgress: isReadingInProgress,
+                      isPurchasingInProgress: isPurchasingInProgress,
+                      isFullyPurchased: isFullyPurchased,
+                      isFullyRead: isFullyRead,
+                      readingProgress: readingProgress,
+                      purchaseProgress: purchaseProgress,
+                      isWide: isWide,
                     ),
                   ),
                 ),
             ],
-          ),
-          // Contenuto sotto l'immagine
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Autore: ${comic['author']}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Volumi: ${comic['volumes']}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if (hasProgressBars) ...[
-                  const SizedBox(height: 8),
-                  if (isReadingInProgress && isPurchasingInProgress) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildProgressBar('Lettura', readingProgress, Colors.blue),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildProgressBar('Acquisto', purchaseProgress, Colors.green),
-                        ),
-                      ],
-                    ),
-                  ] else if (isReadingInProgress && isFullyPurchased) ...[
-                    _buildProgressBar('Progresso lettura', readingProgress, Colors.blue),
-                  ] else if (isPurchasingInProgress && isFullyRead) ...[
-                    _buildProgressBar('Progresso acquisto', purchaseProgress, Colors.green),
-                  ],
-                ],
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildProgressBar(String label, double value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12)),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 25,
-          child: Stack(
-            children: [
-              LinearProgressIndicator(
-                value: value,
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 25,
-              ),
-              Center(
-                child: Text(
-                  '${(value * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildBadge(String text, Color color, bool isWide) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isWide ? 12 : 8,
+        vertical: isWide ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
+        ],
+        border: Border.all(color: Colors.white, width: 1),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: isWide ? 14 : 12,
+          fontWeight: FontWeight.bold,
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBars({
+    required bool isReadingInProgress,
+    required bool isPurchasingInProgress,
+    required bool isFullyPurchased,
+    required bool isFullyRead,
+    required double readingProgress,
+    required double purchaseProgress,
+    required bool isWide,
+  }) {
+    if (isReadingInProgress && isPurchasingInProgress) {
+      return Row(
+        children: [
+          Expanded(
+            child: _buildProgressBar('Lettura', readingProgress, Colors.blue, isWide, isLeft: true),
+          ),
+          Expanded(
+            child: _buildProgressBar('Acquisto', purchaseProgress, Colors.green, isWide, isLeft: false),
+          ),
+        ],
+      );
+    } else if (isReadingInProgress && isFullyPurchased) {
+      return _buildProgressBar('Lettura', readingProgress, Colors.blue, isWide, isLeft: true);
+    } else if (isPurchasingInProgress && isFullyRead) {
+      return _buildProgressBar('Acquisto', purchaseProgress, Colors.green, isWide, isLeft: true);
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildProgressBar(String label, double value, Color color, bool isWide, {required bool isLeft}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.only(
+          bottomLeft: isLeft ? const Radius.circular(12) : Radius.zero,
+          bottomRight: !isLeft ? const Radius.circular(12) : Radius.zero,
+        ),
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.only(
+              bottomLeft: isLeft ? const Radius.circular(12) : Radius.zero,
+              bottomRight: !isLeft ? const Radius.circular(12) : Radius.zero,
+            ),
+            child: LinearProgressIndicator(
+              value: value.clamp(0.0, 1.0),
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: isWide ? 25 : 20,
+            ),
+          ),
+          Center(
+            child: Text(
+              '$label: ${(value * 100).toStringAsFixed(0)}%',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: isWide ? 12 : 10,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

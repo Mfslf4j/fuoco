@@ -66,12 +66,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int _getCrossAxisCount(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth > 600 ? 6 : 2;
+    // Calcola il numero di colonne in base a una larghezza minima per colonna
+    const minColumnWidth = 180.0; // Larghezza minima per ogni card
+    return (screenWidth / minColumnWidth).floor().clamp(1, 6); // Min 1, max 6 colonne
   }
 
-  double _getChilAspectRatio(BuildContext context) {
+  double _getChildAspectRatio(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth > 600 ? 0.88 : 0.66;
+    final crossAxisCount = _getCrossAxisCount(context);
+    final columnWidth = (screenWidth - (crossAxisCount - 1) * 8) / crossAxisCount;
+    const imageHeightRatio = 1.4; // Altezza immagine
+    const textHeightRatio = 0.35; // Leggermente aumentato per icone e testo
+    final progressBarHeight = MediaQuery.of(context).size.width > 300 ? 25.0 : 20.0;
+    final progressHeightRatio = progressBarHeight / columnWidth;
+    var totalHeightRatio = imageHeightRatio + textHeightRatio + progressHeightRatio; // ≈ 1.9
+    return columnWidth / (columnWidth * totalHeightRatio); // ≈ 0.53
   }
 
   @override
@@ -121,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   padding: const EdgeInsets.all(8),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: _getCrossAxisCount(context),
-                    childAspectRatio: _getChilAspectRatio(context),
+                    childAspectRatio: _getChildAspectRatio(context),
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
