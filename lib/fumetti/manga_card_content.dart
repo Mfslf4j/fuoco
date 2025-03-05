@@ -154,7 +154,7 @@ class MangaCardContent extends StatelessWidget {
           child: Text(
             text,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontSize: isWide ? 16 : 14,
+              fontSize: isWide ? 16 : 13,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),

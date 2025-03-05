@@ -6,7 +6,7 @@ class ComicRepository {
   // Recupera tutti i comics da Supabase
   Future<List<Map<String, dynamic>>> fetchComics() async {
     try {
-      final response = await _client.from('comics').select();
+      final response = await _client.from('comics').select().order('title', ascending: true);
       return (response as List<dynamic>).map((e) => e as Map<String, dynamic>).toList();
     } catch (e) {
       throw Exception('Errore durante il recupero dei comics: $e');

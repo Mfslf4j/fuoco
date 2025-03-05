@@ -110,7 +110,7 @@ class MangaCardProgress extends StatelessWidget {
     bool isFull,
   ) {
     return Container(
-      height: isWide ? 40 : 30, // Barre molto più spesse
+      height: 40, // Barre molto più spesse
       decoration: BoxDecoration(
         color: Colors.grey[400], // Sfondo visibile per contrasto
         borderRadius:
@@ -146,7 +146,7 @@ class MangaCardProgress extends StatelessWidget {
               backgroundColor: Colors.transparent,
               // Sfondo trasparente per usare il Container
               valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: isWide ? 40 : 30, // Altezza piena
+              minHeight: 40, // Altezza piena
             ),
           ),
           Text(

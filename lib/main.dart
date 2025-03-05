@@ -6,7 +6,8 @@ import 'fumetti/comic_repository.dart';
 Future<void> main() async {
   await Supabase.initialize(
     url: 'https://fsjuzwrlfnysgnooynkc.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzanV6d3JsZm55c2dub295bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwOTQzMzgsImV4cCI6MjA1NjY3MDMzOH0.yDmB2xW8I7ynIszpSLG-l3vrooTl8tmeWOgwL84jkko',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzanV6d3JsZm55c2dub295bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwOTQzMzgsImV4cCI6MjA1NjY3MDMzOH0.yDmB2xW8I7ynIszpSLG-l3vrooTl8tmeWOgwL84jkko',
   );
   runApp(const MyApp());
 }
@@ -58,11 +59,12 @@ class _MyHomePageState extends State<MyHomePage> {
   void _filterManga() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      filteredMangaList = allComics.where((manga) {
-        final title = manga['title']?.toString().toLowerCase() ?? '';
-        final author = manga['author']?.toString().toLowerCase() ?? '';
-        return title.contains(query) || author.contains(query);
-      }).toList();
+      filteredMangaList =
+          allComics.where((manga) {
+            final title = manga['title']?.toString().toLowerCase() ?? '';
+            final author = manga['author']?.toString().toLowerCase() ?? '';
+            return title.contains(query) || author.contains(query);
+          }).toList();
     });
   }
 
@@ -70,7 +72,9 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       await _comicRepository.updateComic(updatedComic);
       setState(() {
-        final index = allComics.indexWhere((comic) => comic['id'] == updatedComic['id']);
+        final index = allComics.indexWhere(
+          (comic) => comic['id'] == updatedComic['id'],
+        );
         if (index != -1) {
           allComics[index] = updatedComic;
         }
@@ -80,18 +84,16 @@ class _MyHomePageState extends State<MyHomePage> {
         const SnackBar(content: Text('Manga aggiornato con successo')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    var isWide = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('La mia collezione Manga'),
-      ),
+      appBar: AppBar(title: const Text('La mia collezione Manga')),
       body: Column(
         children: [
           Padding(
@@ -124,7 +126,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 }
 
                 allComics = snapshot.data!;
-                if (filteredMangaList.isEmpty && _searchController.text.isEmpty) {
+                if (filteredMangaList.isEmpty &&
+                    _searchController.text.isEmpty) {
                   filteredMangaList = List.from(allComics);
                 }
 
@@ -134,15 +137,16 @@ class _MyHomePageState extends State<MyHomePage> {
                     spacing: 8,
                     runSpacing: 8,
                     alignment: WrapAlignment.start,
-                    children: filteredMangaList.map((comic) {
-                      return SizedBox(
-                        width: 250, // Larghezza aumentata per leggibilità
-                        child: MangaCard(
-                          comic: comic,
-                          onComicUpdated: _updateComic,
-                        ),
-                      );
-                    }).toList(),
+                    children:
+                        filteredMangaList.map((comic) {
+                          return SizedBox(
+                            width: isWide ? 310 : 235,
+                            child: MangaCard(
+                              comic: comic,
+                              onComicUpdated: _updateComic,
+                            ),
+                          );
+                        }).toList(),
                   ),
                 );
               },

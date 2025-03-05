@@ -35,7 +35,7 @@ class MangaCard extends StatelessWidget {
             children: [
               MangaCardContent(
                 comic: comic,
-                isWide: MediaQuery.of(context).size.width > 300,
+                isWide: MediaQuery.of(context).size.width > 600,
                 isCompleted: isCompleted,
               ),
               if (isCompleted)
@@ -43,7 +43,7 @@ class MangaCard extends StatelessWidget {
               else if (hasProgressBars)
                 MangaCardProgress(
                   comic: comic,
-                  isWide: MediaQuery.of(context).size.width > 300,
+                  isWide: MediaQuery.of(context).size.width > 600,
                 )
               else
                 _buildToReadPlaceholder(),
