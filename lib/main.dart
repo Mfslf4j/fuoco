@@ -140,7 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children:
                         filteredMangaList.map((comic) {
                           return SizedBox(
-                            width: isWide ? 310 : 235,
+                            width: isWide ? 320 : 200,
                             child: MangaCard(
                               comic: comic,
                               onComicUpdated: _updateComic,

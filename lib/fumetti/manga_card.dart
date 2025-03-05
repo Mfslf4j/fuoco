@@ -14,6 +14,8 @@ class MangaCard extends StatelessWidget {
     final isCompleted = _isCompleted();
     final hasProgressBars = _hasProgressBars();
 
+    print(MediaQuery.of(context).size.width);
+
     return InkResponse(
       onTap: () => _showEditModal(context),
       child: Card(
