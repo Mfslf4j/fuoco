@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'fumetti/manga_card.dart';
+import 'fumetti/comic_repository.dart';
 
 Future<void> main() async {
   await Supabase.initialize(
@@ -35,15 +36,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<List<dynamic>> _future;
+  late Future<List<Map<String, dynamic>>> _future;
   List<Map<String, dynamic>> allComics = [];
   List<Map<String, dynamic>> filteredMangaList = [];
   final TextEditingController _searchController = TextEditingController();
+  final ComicRepository _comicRepository = ComicRepository();
 
   @override
   void initState() {
     super.initState();
-    _future = Supabase.instance.client.from('comics').select().then((response) => response as List<dynamic>);
+    _future = _comicRepository.fetchComics();
     _searchController.addListener(_filterManga);
   }
 
@@ -64,23 +66,24 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  int _getCrossAxisCount(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Calcola il numero di colonne in base a una larghezza minima per colonna
-    const minColumnWidth = 180.0; // Larghezza minima per ogni card
-    return (screenWidth / minColumnWidth).floor().clamp(1, 6); // Min 1, max 6 colonne
-  }
-
-  double _getChildAspectRatio(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = _getCrossAxisCount(context);
-    final columnWidth = (screenWidth - (crossAxisCount - 1) * 8) / crossAxisCount;
-    const imageHeightRatio = 1.4; // Altezza immagine
-    const textHeightRatio = 0.35; // Leggermente aumentato per icone e testo
-    final progressBarHeight = MediaQuery.of(context).size.width > 300 ? 25.0 : 20.0;
-    final progressHeightRatio = progressBarHeight / columnWidth;
-    var totalHeightRatio = imageHeightRatio + textHeightRatio + progressHeightRatio; // ≈ 1.9
-    return columnWidth / (columnWidth * totalHeightRatio); // ≈ 0.53
+  Future<void> _updateComic(Map<String, dynamic> updatedComic) async {
+    try {
+      await _comicRepository.updateComic(updatedComic);
+      setState(() {
+        final index = allComics.indexWhere((comic) => comic['id'] == updatedComic['id']);
+        if (index != -1) {
+          allComics[index] = updatedComic;
+        }
+        _filterManga();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Manga aggiornato con successo')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    }
   }
 
   @override
@@ -107,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<dynamic>>(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _future,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -120,25 +123,27 @@ class _MyHomePageState extends State<MyHomePage> {
                   return const Center(child: Text('Nessun dato disponibile'));
                 }
 
-                allComics = snapshot.data!.map((e) => e as Map<String, dynamic>).toList();
-                // Inizializza filteredMangaList con tutti i comics se non è stata ancora filtrata
+                allComics = snapshot.data!;
                 if (filteredMangaList.isEmpty && _searchController.text.isEmpty) {
                   filteredMangaList = List.from(allComics);
                 }
 
-                return GridView.builder(
+                return SingleChildScrollView(
                   padding: const EdgeInsets.all(8),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: _getCrossAxisCount(context),
-                    childAspectRatio: _getChildAspectRatio(context),
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.start,
+                    children: filteredMangaList.map((comic) {
+                      return SizedBox(
+                        width: 250, // Larghezza aumentata per leggibilità
+                        child: MangaCard(
+                          comic: comic,
+                          onComicUpdated: _updateComic,
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  itemCount: filteredMangaList.length,
-                  itemBuilder: (context, index) {
-                    final comic = filteredMangaList[index];
-                    return MangaCard(comic: comic);
-                  },
                 );
               },
             ),

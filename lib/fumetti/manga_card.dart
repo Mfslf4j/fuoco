@@ -1,299 +1,145 @@
 import 'package:flutter/material.dart';
+import 'manga_card_content.dart';
+import 'manga_card_progress.dart';
+import 'manga_edit_modal.dart';
 
 class MangaCard extends StatelessWidget {
   final Map<String, dynamic> comic;
+  final Function(Map<String, dynamic>)? onComicUpdated;
 
-  const MangaCard({
-    super.key,
-    required this.comic,
-  });
+  const MangaCard({super.key, required this.comic, this.onComicUpdated});
 
   @override
   Widget build(BuildContext context) {
-    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
-    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
-    var readingProgress = (comic['last_read_volume'] ?? 0) / (comic['volumes'] ?? 1);
+    final isCompleted = _isCompleted();
+    final hasProgressBars = _hasProgressBars();
 
-    bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
-    bool isPurchasingInProgress = purchaseProgress < 1;
-    bool isFullyPurchased = purchaseProgress == 1;
-    bool isFullyRead = readingProgress == 1;
-    bool isCompleted = isFullyPurchased && isFullyRead;
-    bool hasProgressBars = (isReadingInProgress && isPurchasingInProgress) ||
-        (isReadingInProgress && isFullyPurchased) ||
-        (isPurchasingInProgress && isFullyRead);
-
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.all(4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isCompleted
-            ? BorderSide(color: Colors.orange[800]!, width: 2)
-            : BorderSide.none,
-      ),
-      color: isCompleted ? Colors.amber[300] : null,
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final isWide = width > 300;
-          final progressBarHeight = isWide ? 25.0 : 20.0;
-
-          return Column(
+    return InkResponse(
+      onTap: () => _showEditModal(context),
+      child: Card(
+        elevation: 4,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side:
+              isCompleted
+                  ? BorderSide(color: const Color(0xFFB8860B), width: 3)
+                  : const BorderSide(color: Colors.black12, width: 2),
+        ),
+        clipBehavior: Clip.none,
+        child: Container(
+          decoration: _buildCardDecoration(isCompleted),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Immagine
-                    SizedBox(
-                      height: width * 1.4,
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
-                              image: DecorationImage(
-                                image: NetworkImage(comic['cover_url'] ?? 'https://via.placeholder.com/150'),
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                              ),
-                            ),
-                            foregroundDecoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.6),
-                                ],
-                                stops: const [0.7, 1.0],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 4,
-                            left: 4,
-                            right: 4,
-                            child: Text(
-                              comic['title'] ?? 'Titolo sconosciuto',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isWide ? 18 : 14,
-                                fontWeight: FontWeight.bold,
-                                shadows: const [
-                                  Shadow(
-                                    color: Colors.black,
-                                    offset: Offset(1, 1),
-                                    blurRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          if (isFullyPurchased || isFullyRead)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  if (isCompleted)
-                                    _buildBadge('Completato', Colors.orange[800]!, isWide)
-                                  else ...[
-                                    if (isFullyPurchased)
-                                      _buildBadge('Acquistato', Colors.green[700]!, isWide),
-                                    if (isFullyRead)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: _buildBadge('Letto', Colors.blue[700]!, isWide),
-                                      ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Contenuto testuale
-                    Padding(
-                      padding: EdgeInsets.all(isWide ? 8 : 6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: isWide ? 16 : 14,
-                                color: Colors.grey[700],
-                              ),
-                              SizedBox(width: isWide ? 6 : 4),
-                              Text(
-                                'Autore: ${comic['author'] ?? 'Sconosciuto'}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontSize: isWide ? 14 : 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: isWide ? 4 : 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.book_outlined,
-                                size: isWide ? 16 : 14,
-                                color: Colors.grey[700],
-                              ),
-                              SizedBox(width: isWide ? 6 : 4),
-                              Text(
-                                'Volumi: ${comic['volumes'] ?? 'N/A'}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontSize: isWide ? 14 : 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              MangaCardContent(
+                comic: comic,
+                isWide: MediaQuery.of(context).size.width > 300,
+                isCompleted: isCompleted,
               ),
-              // Barre di progresso
-              if (hasProgressBars && !isCompleted)
-                SizedBox(
-                  height: progressBarHeight,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(12),
-                      ),
-                    ),
-                    child: _buildProgressBars(
-                      isReadingInProgress: isReadingInProgress,
-                      isPurchasingInProgress: isPurchasingInProgress,
-                      isFullyPurchased: isFullyPurchased,
-                      isFullyRead: isFullyRead,
-                      readingProgress: readingProgress,
-                      purchaseProgress: purchaseProgress,
-                      isWide: isWide,
-                    ),
-                  ),
-                ),
+              if (isCompleted)
+                const SizedBox(height: 40)
+              else if (hasProgressBars)
+                MangaCardProgress(
+                  comic: comic,
+                  isWide: MediaQuery.of(context).size.width > 300,
+                )
+              else
+                _buildToReadPlaceholder(),
             ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildBadge(String text, Color color, bool isWide) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isWide ? 12 : 8,
-        vertical: isWide ? 6 : 4,
-      ),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
           ),
-        ],
-        border: Border.all(color: Colors.white, width: 1),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: isWide ? 14 : 12,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildProgressBars({
-    required bool isReadingInProgress,
-    required bool isPurchasingInProgress,
-    required bool isFullyPurchased,
-    required bool isFullyRead,
-    required double readingProgress,
-    required double purchaseProgress,
-    required bool isWide,
-  }) {
-    if (isReadingInProgress && isPurchasingInProgress) {
-      return Row(
-        children: [
-          Expanded(
-            child: _buildProgressBar('Lettura', readingProgress, Colors.blue, isWide, isLeft: true),
-          ),
-          Expanded(
-            child: _buildProgressBar('Acquisto', purchaseProgress, Colors.green, isWide, isLeft: false),
-          ),
-        ],
+  BoxDecoration _buildCardDecoration(bool isCompleted) {
+    if (isCompleted) {
+      return const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFDDBD0E),
+            Color(0xFFCF9A16),
+            Color(0xFFFFE4B5),
+            Color(0xFFA3770A),
+          ],
+          stops: [0.0, 0.4, 0.6, 1.0],
+        ),
+        borderRadius: BorderRadius.all(Radius.circular(20)), // Bordi uniformi
       );
-    } else if (isReadingInProgress && isFullyPurchased) {
-      return _buildProgressBar('Lettura', readingProgress, Colors.blue, isWide, isLeft: true);
-    } else if (isPurchasingInProgress && isFullyRead) {
-      return _buildProgressBar('Acquisto', purchaseProgress, Colors.green, isWide, isLeft: true);
+    } else {
+      return BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, Colors.grey[100]!],
+        ),
+        borderRadius: BorderRadius.all(Radius.circular(20)), // Bordi uniformi
+      );
     }
-    return const SizedBox.shrink();
   }
 
-  Widget _buildProgressBar(String label, double value, Color color, bool isWide, {required bool isLeft}) {
+  Widget _buildToReadPlaceholder() {
     return Container(
+      height: 40,
       decoration: BoxDecoration(
         color: Colors.grey[300],
         borderRadius: BorderRadius.only(
-          bottomLeft: isLeft ? const Radius.circular(12) : Radius.zero,
-          bottomRight: !isLeft ? const Radius.circular(12) : Radius.zero,
+          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+        ), // Raggio uniformato a 16
+      ),
+      child: const Center(
+        child: Text(
+          'Da leggere',
+          style: TextStyle(
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
         ),
       ),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.only(
-              bottomLeft: isLeft ? const Radius.circular(12) : Radius.zero,
-              bottomRight: !isLeft ? const Radius.circular(12) : Radius.zero,
-            ),
-            child: LinearProgressIndicator(
-              value: value.clamp(0.0, 1.0),
-              backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: isWide ? 25 : 20,
-            ),
-          ),
-          Center(
-            child: Text(
-              '$label: ${(value * 100).toStringAsFixed(0)}%',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: isWide ? 12 : 10,
-              ),
-            ),
-          ),
-        ],
-      ),
+    );
+  }
+
+  bool _isCompleted() {
+    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
+    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
+    var readingProgress =
+        (comic['last_read_volume'] ?? 0) / (comic['volumes'] ?? 1);
+    return purchaseProgress == 1 && readingProgress == 1;
+  }
+
+  bool _hasProgressBars() {
+    final progressData = _calculateProgress();
+    return progressData['hasProgressBars'] && !_isCompleted();
+  }
+
+  Map<String, dynamic> _calculateProgress() {
+    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
+    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
+    var readingProgress =
+        (comic['last_read_volume'] ?? 0) / (comic['volumes'] ?? 1);
+
+    bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
+    bool isPurchasingInProgress = purchaseProgress < 1;
+
+    return {
+      'hasProgressBars':
+          (isReadingInProgress && isPurchasingInProgress) ||
+          (isReadingInProgress && purchaseProgress == 1) ||
+          (isPurchasingInProgress && readingProgress == 1),
+    };
+  }
+
+  void _showEditModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => MangaEditModal(comic: comic, onSave: onComicUpdated),
     );
   }
 }
