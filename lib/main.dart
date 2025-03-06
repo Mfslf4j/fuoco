@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fuoco/profile_selector.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'fumetti/manga_card.dart';
 import 'fumetti/comic_repository.dart';
@@ -98,10 +99,28 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  double _getWrapCardWidth(double width) {
+    var widthStep = 300;
+    var margin = 8;
+
+    if (width > widthStep * 6) {
+      return (width - 8 * margin) / 7;
+    } else if (width > widthStep * 5) {
+      return (width - 7 * margin) / 6;
+    } else if (width > widthStep * 4) {
+      return (width - 6 * margin) / 5;
+    } else if (width > widthStep * 3) {
+      return (width - 5 * margin) / 4;
+    } else if (width > widthStep * 2) {
+      return (width - 4 * margin) / 3;
+    } else if (width > widthStep) {
+      return (width - 3 * margin) / 2;
+    }
+    return (width - 2 * margin);
+  }
+
   @override
   Widget build(BuildContext context) {
-    var isWide = MediaQuery.of(context).size.width > 600;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('La mia collezione Manga'),
@@ -160,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     alignment: WrapAlignment.start,
                     children: filteredMangaList.map((comic) {
                       return SizedBox(
-                        width: isWide ? 320 : 200,
+                        width: _getWrapCardWidth(MediaQuery.of(context).size.width),
                         child: MangaCard(
                           comic: comic,
                           onComicUpdated: _updateComic,
@@ -175,94 +194,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-    );
-  }
-}
-
-// Custom Profile Selector Widget
-class ProfileSelector extends StatelessWidget {
-  final String selectedProfile;
-  final Function(String) onProfileChanged;
-
-  const ProfileSelector({
-    super.key,
-    required this.selectedProfile,
-    required this.onProfileChanged,
-  });
-
-  static const Map<String, String> profileIcons = {
-    'Matteo': 'https://cdn-icons-png.flaticon.com/128/1211/1211015.png',
-    'Sara': 'https://cdn-icons-png.flaticon.com/128/7665/7665682.png',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showProfileMenu(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.grey[200], // Neutral light grey background
-          borderRadius: BorderRadius.circular(8), // Softer corners
-          border: Border.all(color: Colors.grey[400]!, width: 1), // Subtle border
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.network(
-              profileIcons[selectedProfile]!,
-              width: 24,
-              height: 24,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              selectedProfile,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_drop_down, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showProfileMenu(BuildContext context) {
-    showMenu(
-      context: context,
-      position: const RelativeRect.fromLTRB(100, 80, 0, 0), // Adjust as needed
-      items: profileIcons.entries.map((entry) {
-        return PopupMenuItem<String>(
-          value: entry.key,
-          child: Row(
-            children: [
-              Image.network(
-                entry.value,
-                width: 24,
-                height: 24,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                entry.key,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          onTap: () => onProfileChanged(entry.key),
-        );
-      }).toList(),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      color: Colors.white,
     );
   }
 }
