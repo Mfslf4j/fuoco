@@ -13,9 +13,6 @@ class MangaCardProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progressData = _calculateProgress();
-    if (!progressData['hasProgressBars'] || progressData['isCompleted']) {
-      return const SizedBox.shrink();
-    }
 
     return Container(
       decoration: BoxDecoration(
@@ -80,8 +77,7 @@ class MangaCardProgress extends StatelessWidget {
           ),
         ],
       );
-    } else if (progressData['isReadingInProgress'] &&
-        progressData['isFullyPurchased']) {
+    } else if (progressData['isReadingInProgress']) {
       return _buildProgressBar(
         'Lettura',
         progressData['readingProgress'],
@@ -89,8 +85,7 @@ class MangaCardProgress extends StatelessWidget {
         true,
         true,
       );
-    } else if (progressData['isPurchasingInProgress'] &&
-        progressData['isFullyRead']) {
+    } else if (progressData['isPurchasingInProgress']) {
       return _buildProgressBar(
         'Acquisto',
         progressData['purchaseProgress'],
