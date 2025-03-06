@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class MangaCardProgress extends StatelessWidget {
   final Map<String, dynamic> comic;
   final bool isWide;
+  final String selectedProfile;
 
   const MangaCardProgress({
     super.key,
     required this.comic,
     required this.isWide,
+    required this.selectedProfile,
   });
 
   @override
@@ -16,10 +18,10 @@ class MangaCardProgress extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[300], // Colore più scuro per visibilità
+        color: Colors.grey[300],
         borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(20),
-        ), // Bordi più arrotondati
+        ),
       ),
       child: _buildProgressBars(progressData),
     );
@@ -29,7 +31,8 @@ class MangaCardProgress extends StatelessWidget {
     List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
     var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
     var readingProgress =
-        (comic['last_read_volume'] ?? 0) / (comic['volumes'] ?? 1);
+        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
+            (comic['volumes'] ?? 1);
 
     bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
     bool isPurchasingInProgress = purchaseProgress < 1;
@@ -46,7 +49,7 @@ class MangaCardProgress extends StatelessWidget {
       'readingProgress': readingProgress,
       'purchaseProgress': purchaseProgress,
       'hasProgressBars':
-          (isReadingInProgress && isPurchasingInProgress) ||
+      (isReadingInProgress && isPurchasingInProgress) ||
           (isReadingInProgress && isFullyPurchased) ||
           (isPurchasingInProgress && isFullyRead),
     };

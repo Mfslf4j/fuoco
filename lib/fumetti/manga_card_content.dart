@@ -4,13 +4,15 @@ import 'manga_badge.dart';
 class MangaCardContent extends StatelessWidget {
   final Map<String, dynamic> comic;
   final bool isWide;
-  final bool isCompleted; // Nuovo parametro
+  final bool isCompleted;
+  final String selectedProfile;
 
   const MangaCardContent({
     super.key,
     required this.comic,
     required this.isWide,
-    required this.isCompleted, // Richiesto
+    required this.isCompleted,
+    required this.selectedProfile,
   });
 
   @override
@@ -26,9 +28,8 @@ class MangaCardContent extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               _buildCoverImage(),
-              Positioned(bottom: 8, left: 8, right: 8, child: _buildTitle()),
-              if (progressData['isFullyPurchased'] ||
-                  progressData['isFullyRead'])
+              Positioned(top: 8, left: 8, right: 8, child: _buildTitle()),
+              if (progressData['isFullyPurchased'] || progressData['isFullyRead'])
                 Positioned(top: 8, right: 8, child: _buildBadges(progressData)),
             ],
           ),
@@ -199,9 +200,10 @@ class MangaCardContent extends StatelessWidget {
     List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
     var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
     var readingProgress =
-        (comic['last_read_volume'] ?? 0) / (comic['volumes'] ?? 1);
+        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
+            (comic['volumes'] ?? 1);
     String lastPurchasedVolume =
-        purchasedNumbers.isNotEmpty ? purchasedNumbers.last : 'N/A';
+    purchasedNumbers.isNotEmpty ? purchasedNumbers.last : 'N/A';
 
     return {
       'isReadingInProgress': readingProgress > 0 && readingProgress < 1,
