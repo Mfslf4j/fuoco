@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 class MangaEditModal extends StatefulWidget {
   final Map<String, dynamic> comic;
   final Function(Map<String, dynamic>)? onSave;
+  final String selectedProfile;
 
-  const MangaEditModal({super.key, required this.comic, this.onSave});
+  const MangaEditModal({
+    super.key,
+    required this.comic,
+    this.onSave,
+    required this.selectedProfile,
+  });
 
   @override
   _MangaEditModalState createState() => _MangaEditModalState();
@@ -22,9 +28,8 @@ class _MangaEditModalState extends State<MangaEditModal> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.comic['title'] ?? '');
-    _authorController = TextEditingController(
-      text: widget.comic['author'] ?? '',
-    );
+    _authorController =
+        TextEditingController(text: widget.comic['author'] ?? '');
     _volumesController = TextEditingController(
       text: widget.comic['volumes']?.toString() ?? '',
     );
@@ -32,7 +37,7 @@ class _MangaEditModalState extends State<MangaEditModal> {
       text: widget.comic['bought_volumes'] ?? '',
     );
     _lastReadVolumeController = TextEditingController(
-      text: widget.comic['last_read_volume']?.toString() ?? '',
+      text: widget.comic['last_read_volume_${widget.selectedProfile.toLowerCase()}']?.toString() ?? '',
     );
     _coverUrlController = TextEditingController(
       text: widget.comic['cover_url'] ?? '',
@@ -103,9 +108,9 @@ class _MangaEditModalState extends State<MangaEditModal> {
 
   void _saveChanges() {
     if (_titleController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Il titolo è obbligatorio')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Il titolo è obbligatorio')),
+      );
       return;
     }
 
@@ -132,14 +137,18 @@ class _MangaEditModalState extends State<MangaEditModal> {
       return;
     }
 
-    final updatedComic = Map<String, dynamic>.from(widget.comic)..addAll({
-      'title': _titleController.text,
-      'author': _authorController.text,
-      'volumes': volumes ?? widget.comic['volumes'],
-      'bought_volumes': _boughtVolumesController.text,
-      'last_read_volume': lastReadVolume ?? widget.comic['last_read_volume'],
-      'cover_url': _coverUrlController.text,
-    });
+    final updatedComic = Map<String, dynamic>.from(widget.comic)
+      ..addAll({
+        'title': _titleController.text,
+        'author': _authorController.text,
+        'volumes': volumes ?? widget.comic['volumes'],
+        'bought_volumes': _boughtVolumesController.text,
+        'last_read_volume_${widget.selectedProfile.toLowerCase()}':
+        lastReadVolume ??
+            widget.comic[
+            'last_read_volume_${widget.selectedProfile.toLowerCase()}'],
+        'cover_url': _coverUrlController.text,
+      });
 
     if (widget.onSave != null) {
       widget.onSave!(updatedComic);

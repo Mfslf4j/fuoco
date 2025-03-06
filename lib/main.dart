@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fuoco/profile_selector.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'fumetti/manga_card.dart';
 import 'fumetti/comic_repository.dart';
@@ -7,7 +8,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://fsjuzwrlfnysgnooynkc.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzanV6d3JsZm55c2dub295bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwOTQzMzgsImV4cCI6MjA1NjY3MDMzOH0.yDmB2xW8I7ynIszpSLG-l3vrooTl8tmeWOgwL84jkko',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzanV6d3JsZm55c2dub295bmtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEwOTQzMzgsImV4cCI6MjA1NjY3MDMzOH0.yDmB2xW8I7ynIszpSLG-l3vrooTl8tmeWOgwL84jkko',
   );
   runApp(const MyApp());
 }
@@ -42,6 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> filteredMangaList = [];
   final TextEditingController _searchController = TextEditingController();
   final ComicRepository _comicRepository = ComicRepository();
+  String selectedProfile = 'Matteo'; // Default profile
 
   @override
   void initState() {
@@ -59,21 +61,20 @@ class _MyHomePageState extends State<MyHomePage> {
   void _filterManga() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      filteredMangaList =
-          allComics.where((manga) {
-            final title = manga['title']?.toString().toLowerCase() ?? '';
-            final author = manga['author']?.toString().toLowerCase() ?? '';
-            return title.contains(query) || author.contains(query);
-          }).toList();
+      filteredMangaList = allComics.where((manga) {
+        final title = manga['title']?.toString().toLowerCase() ?? '';
+        final author = manga['author']?.toString().toLowerCase() ?? '';
+        return title.contains(query) || author.contains(query);
+      }).toList();
     });
   }
 
   Future<void> _updateComic(Map<String, dynamic> updatedComic) async {
     try {
-      await _comicRepository.updateComic(updatedComic);
+      await _comicRepository.updateComic(updatedComic, selectedProfile);
       setState(() {
         final index = allComics.indexWhere(
-          (comic) => comic['id'] == updatedComic['id'],
+              (comic) => comic['id'] == updatedComic['id'],
         );
         if (index != -1) {
           allComics[index] = updatedComic;
@@ -88,12 +89,51 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _changeProfile(String newProfile) {
+    if (newProfile != selectedProfile) {
+      setState(() {
+        selectedProfile = newProfile;
+        _future = _comicRepository.fetchComics(); // Refresh data
+        filteredMangaList.clear(); // Clear filtered list to force rebuild
+      });
+    }
+  }
+
+  double _getWrapCardWidth(double width) {
+    var widthStep = 300;
+    var margin = 8;
+
+    if (width > widthStep * 6) {
+      return (width - 8 * margin) / 7;
+    } else if (width > widthStep * 5) {
+      return (width - 7 * margin) / 6;
+    } else if (width > widthStep * 4) {
+      return (width - 6 * margin) / 5;
+    } else if (width > widthStep * 3) {
+      return (width - 5 * margin) / 4;
+    } else if (width > widthStep * 2) {
+      return (width - 4 * margin) / 3;
+    } else if (width > widthStep) {
+      return (width - 3 * margin) / 2;
+    }
+    return (width - 2 * margin);
+  }
+
   @override
   Widget build(BuildContext context) {
-    var isWide = MediaQuery.of(context).size.width > 600;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('La mia collezione Manga')),
+      appBar: AppBar(
+        title: const Text('La mia collezione Manga'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: ProfileSelector(
+              selectedProfile: selectedProfile,
+              onProfileChanged: _changeProfile,
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -137,16 +177,16 @@ class _MyHomePageState extends State<MyHomePage> {
                     spacing: 8,
                     runSpacing: 8,
                     alignment: WrapAlignment.start,
-                    children:
-                        filteredMangaList.map((comic) {
-                          return SizedBox(
-                            width: isWide ? 320 : 200,
-                            child: MangaCard(
-                              comic: comic,
-                              onComicUpdated: _updateComic,
-                            ),
-                          );
-                        }).toList(),
+                    children: filteredMangaList.map((comic) {
+                      return SizedBox(
+                        width: _getWrapCardWidth(MediaQuery.of(context).size.width),
+                        child: MangaCard(
+                          comic: comic,
+                          onComicUpdated: _updateComic,
+                          selectedProfile: selectedProfile,
+                        ),
+                      );
+                    }).toList(),
                   ),
                 );
               },
