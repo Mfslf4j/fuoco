@@ -37,6 +37,8 @@ class ComicProvider with ChangeNotifier {
     }
   }
 
+  List<Map<String, dynamic>> get allComics => _allComics;
+
   void setProfile(String profile) {
     if (_selectedProfile != profile) {
       _selectedProfile = profile;
