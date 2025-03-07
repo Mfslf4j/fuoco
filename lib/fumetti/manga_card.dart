@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'manga_card_content.dart';
 import 'manga_card_progress.dart';
 import 'manga_edit_modal.dart';
+import '../utils/progress_utils.dart';
 
-class MangaCard extends StatelessWidget {
+class MangaCard extends StatefulWidget {
   final Map<String, dynamic> comic;
   final Function(Map<String, dynamic>)? onComicUpdated;
   final String selectedProfile;
@@ -16,47 +17,71 @@ class MangaCard extends StatelessWidget {
   });
 
   @override
+  _MangaCardState createState() => _MangaCardState();
+}
+
+class _MangaCardState extends State<MangaCard> {
+  bool _isTapped = false; // Stato per l'animazione del tap
+
+  @override
   Widget build(BuildContext context) {
     final isCompleted = _isCompleted();
     final hasProgressBars = _hasProgressBars();
 
-    return InkResponse(
-      onTap: () => _showEditModal(context),
-      child: Card(
-        elevation: 4,
-        margin: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: isCompleted
-              ? BorderSide(color: const Color(0xFFB8860B), width: 3)
-              : const BorderSide(color: Colors.black12, width: 2),
-        ),
-        clipBehavior: Clip.none,
-        child: Container(
-          decoration: _buildCardDecoration(isCompleted),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              MangaCardContent(
-                comic: comic,
-                isWide: MediaQuery.of(context).size.width > 600,
-                isCompleted: isCompleted,
-                selectedProfile: selectedProfile,
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isTapped = true),
+      onTapUp: (_) {
+        setState(() => _isTapped = false);
+        _showEditModal(context);
+      },
+      onTapCancel: () => setState(() => _isTapped = false),
+      child: TweenAnimationBuilder(
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 500),
+        builder: (context, double value, child) {
+          return Transform.scale(
+            scale: _isTapped ? 0.9 : (value < 1.0 ? 0.5 + (value * 0.1) : 1.0),
+            child: Opacity(
+              opacity: value,
+              child: Card(
+                elevation: _isTapped ? 4 : 8,
+                margin: const EdgeInsets.all(12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: isCompleted
+                      ? const BorderSide(color: Color(0xFFB8860B), width: 3)
+                      : const BorderSide(color: Colors.black12, width: 2),
+                ),
+                clipBehavior: Clip.none,
+                child: Container(
+                  decoration: _buildCardDecoration(isCompleted),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MangaCardContent(
+                        comic: widget.comic,
+                        isWide: MediaQuery.of(context).size.width > 600,
+                        isCompleted: isCompleted,
+                        selectedProfile: widget.selectedProfile,
+                      ),
+                      if (isCompleted)
+                        const SizedBox(height: 40)
+                      else if (hasProgressBars)
+                        MangaCardProgress(
+                          comic: widget.comic,
+                          isWide: MediaQuery.of(context).size.width > 600,
+                          selectedProfile: widget.selectedProfile,
+                        )
+                      else
+                        _buildToReadPlaceholder(),
+                    ],
+                  ),
+                ),
               ),
-              if (isCompleted)
-                const SizedBox(height: 40)
-              else if (hasProgressBars)
-                MangaCardProgress(
-                  comic: comic,
-                  isWide: MediaQuery.of(context).size.width > 600,
-                  selectedProfile: selectedProfile,
-                )
-              else
-                _buildToReadPlaceholder(),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -75,7 +100,7 @@ class MangaCard extends StatelessWidget {
           ],
           stops: [0.0, 0.4, 0.6, 1.0],
         ),
-        borderRadius: BorderRadius.all(Radius.circular(20)), // Bordi uniformi
+        borderRadius: BorderRadius.all(Radius.circular(20)),
       );
     } else {
       return BoxDecoration(
@@ -84,7 +109,7 @@ class MangaCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Colors.white, Colors.grey[100]!],
         ),
-        borderRadius: BorderRadius.all(Radius.circular(20)), // Bordi uniformi
+        borderRadius: BorderRadius.all(Radius.circular(20)),
       );
     }
   }
@@ -94,10 +119,10 @@ class MangaCard extends StatelessWidget {
       height: 40,
       decoration: BoxDecoration(
         color: Colors.grey[300],
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomRight: Radius.circular(20),
           bottomLeft: Radius.circular(20),
-        ), // Raggio uniformato a 16
+        ),
       ),
       child: const Center(
         child: Text(
@@ -113,45 +138,22 @@ class MangaCard extends StatelessWidget {
   }
 
   bool _isCompleted() {
-    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
-    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
-    var readingProgress =
-        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
-            (comic['volumes'] ?? 1);
-    return purchaseProgress == 1 && readingProgress == 1;
+    final progressData = ProgressUtils.calculateProgress(widget.comic, widget.selectedProfile);
+    return progressData['isCompleted'];
   }
 
   bool _hasProgressBars() {
-    final progressData = _calculateProgress();
+    final progressData = ProgressUtils.calculateProgress(widget.comic, widget.selectedProfile);
     return progressData['hasProgressBars'] && !_isCompleted();
-  }
-
-  Map<String, dynamic> _calculateProgress() {
-    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
-    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
-    var readingProgress =
-        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
-            (comic['volumes'] ?? 1);
-
-    bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
-    bool isPurchasingInProgress = purchaseProgress < 1;
-
-    return {
-      'hasProgressBars':
-      (isReadingInProgress && isPurchasingInProgress) ||
-          (isReadingInProgress && purchaseProgress == 1) ||
-          (isPurchasingInProgress && readingProgress == 1) ||
-          (isPurchasingInProgress && readingProgress == 0),
-    };
   }
 
   void _showEditModal(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => MangaEditModal(
-        comic: comic,
-        onSave: onComicUpdated,
-        selectedProfile: selectedProfile,
+        comic: widget.comic,
+        onSave: widget.onComicUpdated,
+        selectedProfile: widget.selectedProfile,
       ),
     );
   }

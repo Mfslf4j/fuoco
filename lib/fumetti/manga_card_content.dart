@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fuoco/utils/progress_utils.dart';
 import 'manga_badge.dart';
 
 class MangaCardContent extends StatelessWidget {
@@ -17,7 +18,7 @@ class MangaCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressData = _calculateProgress();
+    final progressData = ProgressUtils.calculateProgress(comic, selectedProfile);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -28,7 +29,7 @@ class MangaCardContent extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               _buildCoverImage(),
-              Positioned(top: 8, left: 8, right: 8, child: _buildTitle()),
+              Positioned(bottom: 8, left: 8, right: 8, child: _buildTitle()),
               if (progressData['isFullyPurchased'] || progressData['isFullyRead'])
                 Positioned(top: 8, right: 8, child: _buildBadges(progressData)),
             ],
@@ -117,7 +118,7 @@ class MangaCardContent extends StatelessWidget {
   }
 
   Widget _buildTextContent(BuildContext context) {
-    final progressData = _calculateProgress();
+    final progressData = ProgressUtils.calculateProgress(comic, selectedProfile);
     return Padding(
       padding: EdgeInsets.all(isWide ? 12 : 8),
       child: Column(
@@ -194,26 +195,5 @@ class MangaCardContent extends StatelessWidget {
         ],
       ],
     );
-  }
-
-  Map<String, dynamic> _calculateProgress() {
-    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
-    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
-    var readingProgress =
-        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
-            (comic['volumes'] ?? 1);
-    String lastPurchasedVolume =
-    purchasedNumbers.isNotEmpty ? purchasedNumbers.last : 'N/A';
-
-    return {
-      'isReadingInProgress': readingProgress > 0 && readingProgress < 1,
-      'isPurchasingInProgress': purchaseProgress < 1,
-      'isFullyPurchased': purchaseProgress == 1,
-      'isFullyRead': readingProgress == 1,
-      'isCompleted': purchaseProgress == 1 && readingProgress == 1,
-      'readingProgress': readingProgress,
-      'purchaseProgress': purchaseProgress,
-      'lastPurchasedVolume': lastPurchasedVolume,
-    };
   }
 }
