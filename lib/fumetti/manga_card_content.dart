@@ -28,7 +28,7 @@ class MangaCardContent extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               _buildCoverImage(),
-              Positioned(top: 8, left: 8, right: 8, child: _buildTitle()),
+              Positioned(bottom: 8, left: 8, right: 8, child: _buildTitle()),
               if (progressData['isFullyPurchased'] || progressData['isFullyRead'])
                 Positioned(top: 8, right: 8, child: _buildBadges(progressData)),
             ],
