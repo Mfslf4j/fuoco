@@ -11,7 +11,7 @@ class StatsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Statistiche Collezione'),
-        backgroundColor: Colors.blue, // Blu come tema principale
+        backgroundColor: Theme.of(context).primaryColor, // Blu come tema principale
       ),
       body: Consumer<ComicProvider>(
         builder: (context, provider, child) {
@@ -32,34 +32,34 @@ class StatsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Matteo vs Sara',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
                 const SizedBox(height: 20),
                 _buildComparisonCard(stats),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Progresso Acquisti',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
                 const SizedBox(height: 10),
                 _buildPurchaseProgress(stats),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Statistiche Collezione',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
                 const SizedBox(height: 10),

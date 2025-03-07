@@ -17,14 +17,16 @@ class ProfileSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey _selectorKey = GlobalKey();
+
     return GestureDetector(
-      onTap: () => _showProfileMenu(context),
+      key: _selectorKey,
+      onTap: () => _showProfileMenu(context, _selectorKey),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.grey[200], // Neutral light grey background
-          borderRadius: BorderRadius.circular(8), // Softer corners
-          border: Border.all(color: Colors.grey[400]!, width: 1), // Subtle border
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -51,10 +53,24 @@ class ProfileSelector extends StatelessWidget {
     );
   }
 
-  void _showProfileMenu(BuildContext context) {
+  void _showProfileMenu(BuildContext context, GlobalKey key) {
+    final RenderBox renderBox = key.currentContext!.findRenderObject() as RenderBox;
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    final Size size = renderBox.size;
+
     showMenu(
       context: context,
-      position: const RelativeRect.fromLTRB(100, 80, 0, 0), // Adjust as needed
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + size.height + 10,
+        offset.dx + size.width,
+        0,
+      ),
+      // Imposta la larghezza del menu uguale a quella del pulsante
+      constraints: BoxConstraints(
+        minWidth: size.width, // Larghezza minima = larghezza del pulsante
+        maxWidth: size.width, // Larghezza massima = larghezza del pulsante
+      ),
       items: profileIcons.entries.map((entry) {
         return PopupMenuItem<String>(
           value: entry.key,
@@ -80,7 +96,7 @@ class ProfileSelector extends StatelessWidget {
       }).toList(),
       elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(20),
       ),
       color: Colors.white,
     );
