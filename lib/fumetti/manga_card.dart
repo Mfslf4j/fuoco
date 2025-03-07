@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/progress_utils.dart';
 import 'manga_card_content.dart';
 import 'manga_card_progress.dart';
 import 'manga_edit_modal.dart';
@@ -122,27 +123,8 @@ class MangaCard extends StatelessWidget {
   }
 
   bool _hasProgressBars() {
-    final progressData = _calculateProgress();
+    final progressData = ProgressUtils.calculateProgress(comic, selectedProfile);
     return progressData['hasProgressBars'] && !_isCompleted();
-  }
-
-  Map<String, dynamic> _calculateProgress() {
-    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
-    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
-    var readingProgress =
-        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
-            (comic['volumes'] ?? 1);
-
-    bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
-    bool isPurchasingInProgress = purchaseProgress < 1;
-
-    return {
-      'hasProgressBars':
-      (isReadingInProgress && isPurchasingInProgress) ||
-          (isReadingInProgress && purchaseProgress == 1) ||
-          (isPurchasingInProgress && readingProgress == 1) ||
-          (isPurchasingInProgress && readingProgress == 0),
-    };
   }
 
   void _showEditModal(BuildContext context) {

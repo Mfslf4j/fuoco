@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/progress_utils.dart';
+
 class MangaCardProgress extends StatelessWidget {
   final Map<String, dynamic> comic;
   final bool isWide;
@@ -14,7 +16,7 @@ class MangaCardProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressData = _calculateProgress();
+    final progressData = ProgressUtils.calculateProgress(comic, selectedProfile);
 
     return Container(
       decoration: BoxDecoration(
@@ -25,34 +27,6 @@ class MangaCardProgress extends StatelessWidget {
       ),
       child: _buildProgressBars(progressData),
     );
-  }
-
-  Map<String, dynamic> _calculateProgress() {
-    List<String> purchasedNumbers = (comic['bought_volumes'] ?? '').split(",");
-    var purchaseProgress = purchasedNumbers.length / (comic['volumes'] ?? 1);
-    var readingProgress =
-        (comic['last_read_volume_${selectedProfile.toLowerCase()}'] ?? 0) /
-            (comic['volumes'] ?? 1);
-
-    bool isReadingInProgress = readingProgress > 0 && readingProgress < 1;
-    bool isPurchasingInProgress = purchaseProgress < 1;
-    bool isFullyPurchased = purchaseProgress == 1;
-    bool isFullyRead = readingProgress == 1;
-    bool isCompleted = isFullyPurchased && isFullyRead;
-
-    return {
-      'isReadingInProgress': isReadingInProgress,
-      'isPurchasingInProgress': isPurchasingInProgress,
-      'isFullyPurchased': isFullyPurchased,
-      'isFullyRead': isFullyRead,
-      'isCompleted': isCompleted,
-      'readingProgress': readingProgress,
-      'purchaseProgress': purchaseProgress,
-      'hasProgressBars':
-      (isReadingInProgress && isPurchasingInProgress) ||
-          (isReadingInProgress && isFullyPurchased) ||
-          (isPurchasingInProgress && isFullyRead),
-    };
   }
 
   Widget _buildProgressBars(Map<String, dynamic> progressData) {
